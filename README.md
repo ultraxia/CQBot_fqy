@@ -6,7 +6,7 @@
 
 感谢本插件开发者 [ChenZhen](https://github.com/chinshin)长期以来的贡献和付出。
 
-本项目代码基于CQBot_hzx [chinshin/CBBot_hzx](https://github.com/chinshin/CQBot_hzx) ，删除了口袋48监听相关代码。
+本项目代码基于[CQBot_hzx](https://github.com/chinshin/CQBot_hzx) ，在此基础上删除了口袋48监听相关代码。
 
 
 ------
