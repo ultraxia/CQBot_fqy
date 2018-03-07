@@ -1,17 +1,14 @@
-# -*- coding: utf-8 -*-
-import setting
+mport setting
 import requests
 import json
 import urllib
 import hashlib
 import time
 
-
-# -------------------------------
-# init
 header = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) Appl\
 eWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36'}
 
+pro_id = 11696
 
 # 计算签名
 def getSign(ret):
@@ -21,8 +18,6 @@ def getSign(ret):
     sign = hashlib.md5(md5_string).hexdigest()[5: 21]
     return sign
 
-
-# page从1开始，每页最多20条数据
 def getOrders(pro_id, page):
     url = 'https://wds.modian.com/api/project/orders'
     form = {
@@ -34,25 +29,25 @@ def getOrders(pro_id, page):
     response = requests.post(url, form, headers=header).json()
     return response
 
-
-# 项目聚聚榜查询
-# type = 1 聚聚榜
-# type = 2 打卡榜
 def getRankings(pro_id, type, page):
     url = 'https://wds.modian.com/api/project/rankings'
-    form = {
-        'page': page,
-        'pro_id': pro_id,
-        'type': type
-    }
-    sign = getSign(form)
-    form['sign'] = sign
-    response = requests.post(url, form, headers=header).json()
-    return response
+    while True:
+        form = {
+            'page': page,
+            'pro_id': pro_id,
+            'type': type
+        }
+        sign = getSign(form)
+        form['sign'] = sign
+        response = requests.post(url, form, headers=header).json()
+        page += 1
+        if datas == []:
+            break
+        for data in datas:
+            userid.append(data['nickname'])
+            price.append(data['backer_money'])
+        return response
 
-
-# 项目筹款结果查询
-# 查询多个项目用逗号分隔，如getDetail(10250,10280)
 def getDetail(*pro_id):
     pro_id_str = ','.join(map(str, pro_id))
     url = 'https://wds.modian.com/api/project/detail'
@@ -64,14 +59,12 @@ def getDetail(*pro_id):
     response = requests.post(url, form, headers=header).json()
     return response
 
-
 # rank
 def rank(type):
     msg = ''
     err = False
     err_msg = '返回rank错误\n'
     detail = getDetail(str(setting.pro_id()))
-    # type=1:总额榜
     if type == 1:
         msg = msg + setting.wds_name() + '·聚聚榜TOP20\n' + '------------\n'
         dic = getRankings(setting.pro_id(), 1, 1)
@@ -99,14 +92,6 @@ def rank(type):
         return msg
 
 
-def result(pro_id):
-    response = getDetail(pro_id)
-    msg = '当前项目信息：\n'
-    msg += response['data'][0]['pro_name'] + '\n' + '项目进度：' + str(response['data'][0]['already_raised']) + '/' + response['data'][0]['goal'] + '\n结束时间：' + response['data'][0]['end_time']
-    return msg
-
-
-
 def newOrder(stamp10, secondsDelay):
     newOrders = []
     orderDict = getOrders(setting.pro_id(), 1)
@@ -125,11 +110,59 @@ def newOrder(stamp10, secondsDelay):
         msgDict['msg'] = []
         msg = ''
         for newOrder in newOrders:
-            msg = "感谢 " + newOrder['nickname'] +\
-                " 聚聚在【" + setting.wds_name() + "】中支持了 ¥" +\
-                str(newOrder['backer_money']) + '\n' 
+            nickname = newOrder['nickname']
+            rank = str(searchRank(nickname))
+            if rank != '1':
+                msg = "感谢 " + newOrder['nickname'] +\
+                    " 聚聚在【" + setting.wds_name() + "】中支持了 " +\
+                    str(newOrder['backer_money']) + "元,当前排行榜第" + rank +"名,距离上一名相差"+\
+                    str(computeDiff(nickname)) + '元\n'
+            else:
+                msg = "感谢 " + newOrder['nickname'] +\
+                    " 爸爸在【" + setting.wds_name() + "】中支持了 " +\
+                    str(newOrder['backer_money']) + "元,当前排行榜第" + rank +"名！！源源爱你哟！\n"
+
             msgDict['msg'].append(msg)
         msgDict['end'] = '【摩点】：' + setting.wds_url() + '\n目前集资进度：¥' +\
             str(detail['data'][0]['already_raised']) + '\n目标：¥' +\
             str(detail['data'][0]['goal'])
     return msgDict
+
+def getRank():
+    dataDict = []
+    page = 1
+    url = 'https://wds.modian.com/api/project/rankings'
+    while True:
+        form = {
+            'page': page,
+            'pro_id': pro_id,
+            'type': 1
+        }
+        sign = getSign(form)
+        form['sign'] = sign
+        response = requests.post(url, form, headers=header).json()
+        page += 1
+        datas = response['data']
+        if datas == []:
+            break   
+        for data in datas:
+            dataDict.append(data)    
+    return dataDict
+
+def searchRank(nickname):
+    dataDict = getRank()
+    for data in dataDict:
+        if data['nickname'] == nickname:
+            rank = data['rank']
+            return rank
+
+def computeDiff(nickname):
+    dataDict = getRank()
+    rank = searchRank(nickname) - 1
+    lastrank = rank - 1
+    backer_money = dataDict[rank]['backer_money']
+    last_backer_money = dataDict[lastrank]['backer_money']
+    diff = float(last_backer_money) - float(backer_money)
+    diff = '%.2f' % diff
+    return diff
+    
