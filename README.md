@@ -2,11 +2,11 @@
 
 ## 简介
 
-基于酷Q Air的 [richardchien / CoolQ HTTP API](https://github.com/richardchien/coolq-http-api)  & [richardchien / CQHttp Python SDK](https://github.com/richardchien/cqhttp-python-sdk) 的QQ机器人，包含摩点（微打赏）播报、微博播报。
+[SNH48-费沁源应援会](https://weibo.com/u/5577610720?topnav=1&wvr=6&topsug=1)基于酷Q Air的 [richardchien / CoolQ HTTP API](https://github.com/richardchien/coolq-http-api)  & [richardchien / CQHttp Python SDK](https://github.com/richardchien/cqhttp-python-sdk) 的QQ机器人，包含摩点（微打赏）播报、微博播报。
 
-感谢本插件开发者 [ChenZhen](https://github.com/chinshin)长期以来的贡献和付出。
+感谢开发者 [ChenZhen](https://github.com/chinshin)长期以来的贡献和付出，向开源精神致敬。
 
-本项目代码基于[CQBot_hzx](https://github.com/chinshin/CQBot_hzx) ，在此基础上删除了口袋48监听相关代码。
+本项目代码基于[CQBot_hzx](https://github.com/chinshin/CQBot_hzx) ，在此基础上删除了口袋48监听相关代码，并根据实际需求进行了二次开发。
 
 
 ------
