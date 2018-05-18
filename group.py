@@ -2,66 +2,60 @@
 from cqhttp import CQHttp
 import setting
 import modian
-
+import pk_broad
+import peopleNum
+import querry_card
+import add_card
+import admin
+import add_card_auto
+import fans_db
+import querry_price
+import random
 
 bot = CQHttp(api_root='http://127.0.0.1:5700/')
-# 也可以添加access_token和secret，更加安全
-# bot = CQHttp(api_root='http://127.0.0.1:5700/',
-#              access_token='your-token',
-#              secret='your-secret')
-# 如果设置了access_token和secret，请修改http-API插件的配置文件中对应的部分
 
 
 # 群消息操作
-@bot.on_message('group')
+@bot.on_message()
 def handle_msg(context):
-    if context['group_id'] == setting.groupid() and context['user_id'] != context['self_id']:
-        # 关键词禁言
+    if  context['user_id'] != context['self_id']:
         if setting.shutup():
             for word in setting.shutup():
                 if word in context['message']:
                     bot.set_group_ban(group_id=setting.groupid(), user_id=context['user_id'], duration=30*60)
-        # 关键词回复
-        if context['message'] == '集资' or context['message'] == 'jz' or context['message'] == '打卡' or context['message'] == 'dk':
-            jz = ''
-            jz_array = modian.md_init(setting.pro_id())
-            for jz_dict in jz_array:
-                jz += jz_dict['name'] + '\n' + jz_dict['url_short'] + '\n'
-            bot.send(context, jz)
-        elif context['message'] == 'wds20' or context['message'] == 'jz20' or context['message'] == 'rank' or context['message'] == '聚聚榜' or context['message'] == 'jzb' or context['message'] == '集资榜':
+
+        if context['message'] == 'wds20' or context['message'] == 'jz20' or context['message'] == 'rank':
             rank1_array = modian.rank(1)
             for rank1_msg in rank1_array:
                 bot.send(context, rank1_msg)
-        elif context['message'] == 'dkb' or context['message'] == '打卡榜' or context['message'] == 'dk20' or context['message'] == 'dakabang':
+        elif context['message'] == 'dkb' or context['message'] == '打卡榜' :
             rank2_array = modian.rank(2)
             for rank2_msg in rank2_array:
                 bot.send(context, rank2_msg)
-        elif "独占" in context['message']:
-            dz = ''
-            dz_array = modian.md_init(setting.pro_id())
-            for dz_dict in dz_array:
-                dz += dz_dict['name'] + '\n' + dz_dict['url_short'] + '\n'
-            duzhan = "独占请集资" + '\n' + dz
-            bot.send(context, duzhan)
-        elif context['message'] == '欢迎新人':
-            bot.send(context, setting.welcome())
         elif context['message'] == '项目进度' or context['message'] == '进度':
             jd_array = modian.result(setting.pro_id())
             jd = ''
             for jd_msg in jd_array:
-                jd += jd_msg + '\n'
+                jd += jd_msg 
             bot.send(context, jd)
+        elif '我的卡片：' or '我的卡片:' in context['message']:
+            nickname = context['message'][5:]
+            mycard = querry_card.querry(nickname)
+            bot.send(context,mycard)
+        elif context['message'][:3] == '补卡:' or context['message'][:3] == '补卡：' :
+            nickname = context['message'][3:]
+            buka = add_card_auto.check_data(nickname)
+            bot.send(context,buka)
+
 
 
 # 新人加群提醒
 @bot.on_event('group_increase')
 def handle_group_increase(context):
     if context['group_id'] == setting.groupid():
-        # ret = bot.get_stranger_info(user_id=context['user_id'], no_cache=False)
-        # welcome = '欢迎新聚聚：@' + ret['nickname'] + ' 加入本群\n\n' + setting.welcome()
         welcome = [{'type': 'text', 'data': {'text': '欢迎新聚聚：'}},
         {'type': 'at', 'data': {'qq': str(context['user_id'])}},
-        {'type': 'text', 'data': {'text': '加入本群\n\n%s' % setting.welcome()}}
+        {'type': 'text', 'data': {'text': '，进了应援会的门就是源源的人\n%s' % setting.welcome()}}
         ]
         bot.send(context, message=welcome, is_raw=True)  # 发送欢迎新人
 

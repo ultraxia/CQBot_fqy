@@ -6,7 +6,6 @@ from modian import newOrder
 import copy
 from weibo import getidarray, get_5_idarray, checkretweet, checkpic, getscheme, getretweetweibo, getweibo, getpic
 from setting import groupid, md_interval, kd_interval, wb_interval
-from koudai48 import roomMsg
 from CQLog import INFO, WARN
 # 引入时间调度器 apscheduler 的 BlockingScheduler
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -39,10 +38,9 @@ def getModian():
         for msgDict in msgDict_array:
             if msgDict:
                 for msg in msgDict['msg']:
-                    msg += msgDict['end']
-                    # print(printStrTime() + msg)
+                    # msg += msgDict['end']
                     bot.send_group_msg_async(group_id=groupid(), message=msg, auto_escape=False)
-                    time.sleep(0.1)
+                time.sleep(0.1)
     except Exception as e:
         WARN('error when getModian')
     finally:
@@ -92,10 +90,9 @@ def getWeibo():
         INFO('weibo check completed')
 
 
-# 添加调度任务， 间隔为 0 则不添加
 if interval_md != 0:
-    sched.add_job(getModian, 'interval', seconds=interval_md)
+    sched.add_job(getModian, 'interval',max_instances=20, seconds=interval_md)
 if interval_wb != 0:
-    sched.add_job(getWeibo, 'interval', seconds=interval_wb)
+    sched.add_job(getWeibo, 'interval',max_instances=20, seconds=interval_wb)
 # 开始调度任务
 sched.start()

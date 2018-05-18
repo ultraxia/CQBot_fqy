@@ -2,19 +2,29 @@
 import setting
 import requests
 import json
-# 消去https请求的不安全warning
-# import urllib3
-# urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import urllib
 import hashlib
 import time
-
+import pymysql
+import card
 
 # -------------------------------
 # init
 header = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) Appl\
 eWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36'}
 
+def connect_database():
+    mysql_conn = {
+            'host': '120.25.213.2',
+            'port': 3306,
+            'user': 'root',
+            'password': 'fcc21042',
+            'db': 'SNH48',
+            'charset': 'utf8'
+        }
+    db = pymysql.connect(**mysql_conn)
+    cursor = db.cursor()
+    return db
 
 # 计算签名
 def getSign(ret):
@@ -26,11 +36,6 @@ def getSign(ret):
     sign = hashlib.md5(md5_string).hexdigest()[5: 21]
     return sign
 
-
-# page从1开始，每页最多20条数据
-
-
-# 项目订单查询 10285
 def getOrders(pro_id, page):
     url = 'https://wds.modian.com/api/project/orders'
     form = {
@@ -42,10 +47,6 @@ def getOrders(pro_id, page):
     response = requests.post(url, form, headers=header).json()
     return response
 
-
-# 项目聚聚榜查询
-# type = 1 聚聚榜
-# type = 2 打卡榜
 def getRankings(pro_id, type, page):
     url = 'https://wds.modian.com/api/project/rankings'
     form = {
@@ -58,9 +59,6 @@ def getRankings(pro_id, type, page):
     response = requests.post(url, form, headers=header).json()
     return response
 
-
-# 项目筹款结果查询
-# 查询多个项目用逗号分隔，如getDetail(10250,10280)
 def getDetail(*pro_id):
     # 将形参（一个元组）中int元素转为str元素，用逗号拼接成字符串
     pro_id_str = ','.join(map(str, pro_id))
@@ -72,12 +70,6 @@ def getDetail(*pro_id):
     form['sign'] = sign
     response = requests.post(url, form, headers=header).json()
     return response
-
-
-# init end
-# ---------------------------------
-# func
-
 
 def md_init(proid_array):
     array = []
@@ -94,7 +86,6 @@ def md_init(proid_array):
         dict['name'] = detail['data'][0]['pro_name']
         array.append(dict)
     return array
-
 
 # rank
 def rank(type):
@@ -124,7 +115,7 @@ def rank(type):
             elif int(dic['status']) == 2:
                 err = True
                 err_msg += dic['message']
-        msg = msg + '------------\n【摩点】：' + pro_id_dict['url_short'] + '\n目前集资进度：¥' +\
+        msg = msg + '------------\n【摩点】：' + 'https://mourl.cc/nHm1a9' + '\n目前集资进度：¥' +\
             str(detail['data'][0]['already_raised']) + '\n目标：¥' +\
             detail['data'][0]['goal']
         msg_array.append(msg)
@@ -163,23 +154,60 @@ def newOrder(stamp10, secondsDelay):
             if data['pay_time'] >= stamp10 - secondsDelay and data['pay_time'] < stamp10:
                 newOrders.append(data)
         msgDict = {}
-        # 有新订单
         if newOrders:
-            # 获取项目信息
             detail = getDetail(pro_id_dict['pro_id'])
-            # 查询失败则返回错误信息
             if int(detail['status']) == 2:
                 return detail['message']
-            # 查询成功，初始化消息
             msgDict['msg'] = []
             msg = ''
             for newOrder in newOrders:
-                msg = "感谢 " + newOrder['nickname'] +\
-                    " 聚聚在【" + pro_id_dict['name'] + "】中支持了 ¥" +\
-                    str(newOrder['backer_money']) + '\n' + "感谢对源源的支持" + '\n'
-                msgDict['msg'].append(msg)
-            msgDict['end'] = '【摩点】：' + pro_id_dict['url_short'] + '\n目前集资进度：¥' +\
+                pay_time = time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(newOrder['pay_time']))
+                if float(newOrder['backer_money']) < 10:
+                    msg = "感谢 " + newOrder['nickname'] +\
+                        " 聚聚在【" + pro_id_dict['name'] + "】中支持了 ¥" +\
+                        str(newOrder['backer_money']) + '集资满10元可以抽卡哦'
+                else:
+	                if float(newOrder['backer_money']) < 100:
+	                    file = card.percent_1()
+	                if 100 <= float(newOrder['backer_money']) < 1000:
+	                    file = card.percent_20()
+	                if float(newOrder['backer_money']) >= 1000:
+	                    file = card.percent_100()
+	                cardname = file[6:-4]
+	                msg = "感谢 " + newOrder['nickname'] +\
+	                    " 聚聚在【" + pro_id_dict['name'] + "】中支持了 ¥" +\
+	                    str(newOrder['backer_money']) + '\n'+'恭喜获得卡片： ' + cardname
+	                end = '【摩点】：' + pro_id_dict['url_short'] + '\n目前集资进度：¥' +\
                 str(detail['data'][0]['already_raised']) + '\n目标：¥' +\
                 str(detail['data'][0]['goal'])
+	                msg = [
+	    {
+	        'type': 'text',
+	        'data': {
+	            'text': msg
+	        }
+	    },
+	    {
+	        'type': 'image',
+	        'data': {
+	            'file': file
+	        }
+	    },
+	    {
+        'type': 'text',
+        'data': {
+            'text': end
+        }
+    },
+	]
+	                db = connect_database()
+	                cursor = db.cursor()
+	                cursor.execute("INSERT INTO fqy_card VALUES (%s,%s,%s,%s,%s)", (pro_id_dict['pro_id'],newOrder['nickname'],cardname,newOrder['backer_money'],str(pay_time)))
+	                db.commit()
+	                db.close()   
+                msgDict['msg'].append(msg)
+            # msgDict['end'] = '【摩点】：' + pro_id_dict['url_short'] + '\n目前集资进度：¥' +\
+                # str(detail['data'][0]['already_raised']) + '\n目标：¥' +\
+                # str(detail['data'][0]['goal'])
             msgDict_array.append(msgDict)
     return msgDict_array

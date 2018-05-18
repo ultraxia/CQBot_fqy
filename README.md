@@ -14,4 +14,5 @@
 ## 使用方法
 请移步至开发者[ChenZhen](https://github.com/chinshin)主页阅读[操作文档](https://github.com/chinshin/CQBot_hzx/blob/master/README.md)
 
-
+## 更新记录
+**2018-05-18更新：**新增抽卡功能（文档会在近期发布，有兴趣的同学可以先自行研究源码）
