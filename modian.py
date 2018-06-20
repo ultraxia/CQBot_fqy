@@ -18,7 +18,7 @@ def connect_database():
             'host': '120.25.213.2',
             'port': 3306,
             'user': 'root',
-            'password': 'fcc21042',
+            'password': PASSWORD,
             'db': 'SNH48',
             'charset': 'utf8'
         }
